@@ -19,37 +19,38 @@ public class BookController {
 
 
     @GetMapping
-    public Flux<ResponseEntity<List<BookResponse>>> getAllBooks() {
-//        return bookService.getAllBooks()
-//                .map(ResponseEntity::ok)
-//                .onErrorResume(ex -> {
-//                    // Handle the error and return a specific ResponseEntity
-//                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
-//                });
+    public Flux<ResponseEntity<BookResponse>> getAllBooks() {
+        return bookService.getAllBooks()
+                .map(ResponseEntity::ok)
+                .onErrorResume(ex -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
-    @PutMapping("/{id}/price")
-    public Mono<ResponseEntity<BookResponse>> updateBookPrice(@PathVariable String id, @RequestParam Double newPrice) {
-
-    }
-
-    @PutMapping("/{id}/quantity")
-    public Mono<BookResponse> updateBookQuantity(@PathVariable String id, @RequestParam int newQuantity) {
-
-    }
-
-    @DeleteMapping("/{id}")
-    public Mono<Void> deleteBook(@PathVariable String id) {
-
-    }
-
+//    @PutMapping("/{id}/price")
+//    public Mono<ResponseEntity<BookResponse>> updateBookPrice(@PathVariable String id, @RequestParam Double newPrice) {
+//
+//    }
+//
+//    @PutMapping("/{id}/quantity")
+//    public Mono<BookResponse> updateBookQuantity(@PathVariable String id, @RequestParam int newQuantity) {
+//
+//    }
+//
+//    @DeleteMapping("/{id}")
+//    public Mono<Void> deleteBook(@PathVariable String id) {
+//
+//    }
+//
     @GetMapping("/search/title")
-    public Flux<BookResponse> searchByTitle(@RequestParam String title) {
-
+    public Flux<ResponseEntity<BookResponse>> searchByTitle(@RequestParam String title) {
+        return bookService.searchByTitle(title)
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 
     @GetMapping("/search/author")
-    public Flux<BookResponse> searchByAuthor(@RequestParam String author) {
-
+    public Flux<ResponseEntity<BookResponse>> searchByAuthor(@RequestParam String author) {
+        return bookService.searchByAuthor(author)
+                .map(ResponseEntity::ok)
+                .onErrorResume(e -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()));
     }
 }
