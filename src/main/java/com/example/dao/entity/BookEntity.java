@@ -15,6 +15,7 @@ import java.util.List;
 public class BookEntity {
     @Id
     private String id;
+    private String bookId;
     private String title;
     private List<String> authors;
     private String image;
