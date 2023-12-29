@@ -55,15 +55,18 @@ public class BookService {
 
 
     public Mono<BookResponse> createBook(BookDto bookdto) {
-        Mono<BookDto> book = bookDao.findByBookId(bookdto.getBookId());
+        return bookDao.findByBookId(bookdto.getBookId())
+                .flatMap(existingBook -> {
+                    if (existingBook != null) {
+                        throw new BookAlreadyPresentException("Book already present for bookId: " + bookdto.getBookId());
+                    } else {
+                        return bookDao.save(bookdto)
+                                .map(savedBook -> translator.translate(savedBook, BookResponse.class));
+                    }
+                })
+                .switchIfEmpty(bookDao.save(bookdto)
+                        .map(savedBook -> translator.translate(savedBook, BookResponse.class)));
 
-        if (book.blockOptional().isEmpty()) {
-            return bookDao.save(bookdto)
-                    .map(it -> translator.translate(it, BookResponse.class));
-
-        } else {
-            return Mono.error(new BookAlreadyPresentException("Book already present for bookId: " + bookdto.getBookId()));
-        }
     }
 
     public Mono<Void> deleteBook(String id) {
