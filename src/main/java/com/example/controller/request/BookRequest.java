@@ -15,7 +15,6 @@ import java.util.List;
 @NoArgsConstructor
 public class BookRequest {
     @NotNull
-    @Size(min= 1, max= 128, message = "Book id maximun length exceeded")
     private Long bookId;
 
     @NotBlank

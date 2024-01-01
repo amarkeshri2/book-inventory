@@ -17,6 +17,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import com.example.exceptions.BookAlreadyPresentException;
 import javax.validation.Valid;
+import java.util.List;
 
 
 @RestController
@@ -29,87 +30,78 @@ public class BookController {
     private final ObjectTranslator translator;
 
     @GetMapping("/all")
-    public Flux<ResponseEntity<BookResponse>> getAllBooks() {
-        Flux<BookResponse> books = bookService.getAllBooks()
-                .switchIfEmpty(
-                        Flux.error(
-                                new ResponseStatusException(HttpStatus.NOT_FOUND, "No books found")));
-
-        return books.map(book -> ResponseEntity.ok().body(book));
+    public Mono<ResponseEntity<List<BookResponse>>> getAllBooks() {
+        return bookService.getAllBooks().collectList()
+                .map(books -> ResponseEntity.ok().body(books))
+                .defaultIfEmpty(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
 
-    @PutMapping()
-    public Mono<ResponseEntity<BookResponse>> createBook(@Valid @RequestBody BookRequest bookRequest) {
-        try {
-            BookDto bookDto = translator.translate(bookRequest, BookDto.class);
-            Mono<BookResponse> createdBook = bookService.createBook(bookDto);
-            return createdBook.map(book ->
-                    ResponseEntity.status(HttpStatus.CREATED).body(book));
-        } catch (BookAlreadyPresentException ex) {
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex));
-        } catch (Exception ex) {
-            return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex));
-        }
+    @PostMapping()
+    public Mono<ResponseEntity<BookResponse>> createBook(
+            @Valid @RequestBody BookRequest bookRequest) {
+        BookDto bookDto = translator.translate(bookRequest, BookDto.class);
+        return bookService.createBook(bookDto)
+                .map(book -> ResponseEntity.status(HttpStatus.CREATED).body(book))
+                .onErrorResume(
+                        BookAlreadyPresentException.class,
+                        ex -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build())
+                )
+                .onErrorResume(
+                        throwable -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build())
+                );
     }
+
 
     @PatchMapping("/{id}")
     public Mono<ResponseEntity<BookResponse>> updateBookPrice(
             @PathVariable String id,
-            @RequestBody BookUpdateRequest updateRequest) {
-        try {
-            Mono<BookResponse> updateBook = bookService.updateBook(id, updateRequest);
-            return updateBook.map(bookResponse ->
-                    ResponseEntity.status(HttpStatus.CREATED).body(bookResponse));
-        }
-        catch(BookNotFoundException ex){
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex));
-        }
-        catch(Exception ex){
-            return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex));
-        }
+           @Valid @RequestBody BookUpdateRequest updateRequest) {
+
+        return bookService.updateBook(id, updateRequest)
+                .map(book -> ResponseEntity.status(HttpStatus.CREATED).body(book))
+                .onErrorResume(
+                        BookNotFoundException.class,
+                        ex -> Mono.just(ResponseEntity.status((HttpStatus.BAD_REQUEST)).build())
+                )
+                .onErrorResume(
+                        throwable -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build())
+                );
+
+
     }
 
 
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> deleteBook(@PathVariable String id) {
-        try{
-            bookService.deleteBook(id);
-            return Mono.just(ResponseEntity.ok().build());
-        }
-        catch(BookNotFoundException ex){
-            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage(), ex));
-        }
-        catch(Exception ex){
-            return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), ex));
-        }
+        return bookService.deleteBook(id)
+                .then(Mono.just(ResponseEntity.ok().<Void>build()))
+                .onErrorResume(BookNotFoundException.class,
+                        ex -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).<Void>build()))
+                .onErrorResume(Exception.class,
+                        ex -> Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).<Void>build()));
     }
 
+
     @GetMapping("/search")
-    public Flux<ResponseEntity<BookResponse>> searchBooks(
+    public Mono<ResponseEntity<List<BookResponse>>> searchBooks(
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "author", required = false) String author) {
         if (title == null && author == null) {
-            return Flux.just(ResponseEntity.badRequest().build());
+            return Mono.just(ResponseEntity.badRequest().build());
         }
 
         Flux<BookResponse> books;
         if (title != null && author != null) {
-            books = bookService.searchByTitleAndAuthor(title, author)
-                    .switchIfEmpty(Flux.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "No books found")));
+            books = bookService.searchByTitleAndAuthor(title, author);
         } else if (title != null) {
-            books = bookService.searchByTitle(title)
-                    .switchIfEmpty(Flux.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "No books found with this title")));
+            books = bookService.searchByTitle(title);
         } else {
-            books = bookService.searchByAuthor(author)
-                    .switchIfEmpty(Flux.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "No books found by this author")));
+            books = bookService.searchByAuthor(author);
         }
 
-        return books.map(book ->
-                ResponseEntity.ok().body(book));
+        return books.collectList()
+                .map(book -> ResponseEntity.ok().body(book))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "No books found")));
     }
-
-
-
-
 }
