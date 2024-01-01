@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
@@ -30,6 +31,7 @@ public class BookController {
     private final ObjectTranslator translator;
 
     @GetMapping("/all")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public Mono<ResponseEntity<List<BookResponse>>> getAllBooks() {
         return bookService.getAllBooks().collectList()
                 .map(books -> ResponseEntity.ok().body(books))
@@ -38,6 +40,7 @@ public class BookController {
 
 
     @PostMapping()
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<BookResponse>> createBook(
             @Valid @RequestBody BookRequest bookRequest) {
         BookDto bookDto = translator.translate(bookRequest, BookDto.class);
@@ -54,6 +57,7 @@ public class BookController {
 
 
     @PatchMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<BookResponse>> updateBookPrice(
             @PathVariable String id,
            @Valid @RequestBody BookUpdateRequest updateRequest) {
@@ -73,6 +77,7 @@ public class BookController {
 
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<Void>> deleteBook(@PathVariable String id) {
         return bookService.deleteBook(id)
                 .then(Mono.just(ResponseEntity.ok().<Void>build()))
@@ -84,6 +89,7 @@ public class BookController {
 
 
     @GetMapping("/search")
+    @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<List<BookResponse>>> searchBooks(
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "author", required = false) String author) {
