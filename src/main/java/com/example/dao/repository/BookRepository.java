@@ -12,9 +12,9 @@ import java.util.Optional;
 public interface BookRepository extends ReactiveMongoRepository<BookEntity, String> {
     Flux<BookEntity> findByTitleContainingIgnoreCase(String title);
     Flux<BookEntity> findByAuthorsContainingIgnoreCase(String author);
-    Mono<BookEntity> findByBookId(String id);
+    Mono<BookEntity> findByBookId(Long id);
 
-    Mono<Void> deleteByBookId(String id);
+    Mono<Void> deleteByBookId(Long id);
 
     Flux<BookEntity> findByTitleIgnoreCaseContainingAndAuthorsIgnoreCaseContaining(String title, String author);
 }

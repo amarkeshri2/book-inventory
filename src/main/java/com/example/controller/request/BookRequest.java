@@ -28,9 +28,11 @@ public class BookRequest {
 
     private String description;
 
+    @NotNull
     @Positive(message = "Book price cannot be negative or zero")
     private Double price;
 
+    @NotNull
     @Positive(message = "Book quantity cannot be negative or zero")
     private Integer quantity;
 }

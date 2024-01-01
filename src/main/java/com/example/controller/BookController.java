@@ -58,8 +58,8 @@ public class BookController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<BookResponse>> updateBookPrice(
-            @PathVariable String id,
+    public Mono<ResponseEntity<BookResponse>> updateBook(
+            @PathVariable Long id,
            @Valid @RequestBody BookUpdateRequest updateRequest) {
 
         return bookService.updateBook(id, updateRequest)
@@ -78,7 +78,7 @@ public class BookController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<Void>> deleteBook(@PathVariable String id) {
+    public Mono<ResponseEntity<Void>> deleteBook(@PathVariable Long id) {
         return bookService.deleteBook(id)
                 .then(Mono.just(ResponseEntity.ok().<Void>build()))
                 .onErrorResume(BookNotFoundException.class,

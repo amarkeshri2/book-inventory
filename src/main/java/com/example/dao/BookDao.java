@@ -33,7 +33,7 @@ public class BookDao {
                 .map(bookEntity -> translator.translate(bookEntity, BookDto.class));
     }
 
-    public Mono<BookDto> findByBookId(String id) {
+    public Mono<BookDto> findByBookId(Long id) {
         return bookRepository.findByBookId(id)
                 .map(bookEntity -> translator.translate(bookEntity, BookDto.class));
 
@@ -45,7 +45,7 @@ public class BookDao {
                 .map(book -> translator.translate(book, BookDto.class));
     }
 
-    public Mono<Void> deleteBook(String id) {
+    public Mono<Void> deleteBook(Long id) {
        return bookRepository.deleteByBookId(id);
     }
 

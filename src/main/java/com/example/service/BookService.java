@@ -37,7 +37,7 @@ public class BookService {
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class));
     }
 
-    public Mono<BookResponse> updateBook(String id, BookUpdateRequest updateRequest) {
+    public Mono<BookResponse> updateBook(Long id, BookUpdateRequest updateRequest) {
         return bookDao.findByBookId(id)
                 .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + id)))
                 .flatMap(bookDto -> {
@@ -69,7 +69,7 @@ public class BookService {
 
     }
 
-    public Mono<Void> deleteBook(String id) {
+    public Mono<Void> deleteBook(Long id) {
         return bookDao.findByBookId(id)
                 .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + id)))
                 .then(bookDao.deleteBook(id));

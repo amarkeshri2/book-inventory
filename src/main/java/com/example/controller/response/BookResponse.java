@@ -9,7 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BookResponse {
-    private String bookId;
+    private Long bookId;
     private String title;
     private List<String> authors;
     private String description;
