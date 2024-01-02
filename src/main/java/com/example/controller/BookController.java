@@ -31,7 +31,7 @@ public class BookController {
     private final ObjectTranslator translator;
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     public Mono<ResponseEntity<List<BookResponse>>> getAllBooks() {
         return bookService.getAllBooks().collectList()
                 .map(books -> ResponseEntity.ok().body(books))
@@ -59,7 +59,7 @@ public class BookController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<BookResponse>> updateBook(
-            @PathVariable Long id,
+            @PathVariable String id,
            @Valid @RequestBody BookUpdateRequest updateRequest) {
 
         return bookService.updateBook(id, updateRequest)
@@ -78,7 +78,7 @@ public class BookController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<Void>> deleteBook(@PathVariable Long id) {
+    public Mono<ResponseEntity<Void>> deleteBook(@PathVariable String id) {
         return bookService.deleteBook(id)
                 .then(Mono.just(ResponseEntity.ok().<Void>build()))
                 .onErrorResume(BookNotFoundException.class,
