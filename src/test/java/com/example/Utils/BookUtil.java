@@ -1,6 +1,7 @@
 package com.example.Utils;
 
 import com.example.controller.request.BookRequest;
+import com.example.controller.request.BookUpdateRequest;
 import com.example.controller.response.BookResponse;
 import com.example.dto.BookDto;
 
@@ -61,5 +62,12 @@ public class BookUtil {
         bookDto.setTitle("abc");
         bookDto.setDescription("book");
         return bookDto;
+    }
+
+    public static BookUpdateRequest getBookUpdateRequest() {
+        BookUpdateRequest updateRequest = new BookUpdateRequest();
+        updateRequest.setPrice(2.1);
+        updateRequest.setQuantity(2);
+        return updateRequest;
     }
 }

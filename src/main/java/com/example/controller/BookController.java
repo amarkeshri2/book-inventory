@@ -63,7 +63,7 @@ public class BookController {
            @Valid @RequestBody BookUpdateRequest updateRequest) {
 
         return bookService.updateBook(id, updateRequest)
-                .map(book -> ResponseEntity.status(HttpStatus.CREATED).body(book))
+                .map(book -> ResponseEntity.status(HttpStatus.ACCEPTED).body(book))
                 .onErrorResume(
                         BookNotFoundException.class,
                         ex -> Mono.just(ResponseEntity.status((HttpStatus.BAD_REQUEST)).build())

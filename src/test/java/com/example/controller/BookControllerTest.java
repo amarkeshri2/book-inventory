@@ -3,6 +3,7 @@ package com.example.controller;
 import com.example.Utils.BookUtil;
 import com.example.common.ObjectTranslator;
 import com.example.controller.request.BookRequest;
+import com.example.controller.request.BookUpdateRequest;
 import com.example.controller.response.BookResponse;
 import com.example.dto.BookDto;
 import com.example.service.BookService;
@@ -29,7 +30,7 @@ import java.net.URI;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 public class BookControllerTest {
@@ -62,6 +63,7 @@ public class BookControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .accept(MediaType.APPLICATION_JSON_VALUE))
                 .andExpect(MockMvcResultMatchers.status().isOk());
+        verify(bookService, times(1)).getAllBooks();
     }
 
     @Test
@@ -78,10 +80,33 @@ public class BookControllerTest {
                                 .content(objectMapper.writeValueAsString(request))
                                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(MockMvcResultMatchers.status().isCreated());
-
+        verify(objectTranslator, times(1)).translate(request, BookDto.class);
+        verify(bookService, times(1)).createBook(bookDto);
     }
 
+    @Test
+    void testUpdateBook() throws Exception {
+        String bookId = "1L";
+        BookUpdateRequest request = BookUtil.getBookUpdateRequest();
+        BookResponse response = BookUtil.getBookResponse();
+        when(bookService.updateBook(bookId, any(BookUpdateRequest.class))).thenAnswer((invocation -> Mono.just(response)));
 
+        mockMvc.perform(
+                MockMvcRequestBuilders.patch(URI_WITH_PARAM + "/" + bookId)
+                        .content(objectMapper.writeValueAsString(request))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(MockMvcResultMatchers.status().isAccepted());
+        verify(bookService, times(1)).updateBook(bookId, request);
+    }
+    @Test
+    void testDeleteBook() throws Exception {
+        String bookId = "1L";
+        when(bookService.deleteBook(bookId)).thenReturn(Mono.empty());
+        mockMvc.perform(
+                        MockMvcRequestBuilders.delete(URI_WITH_PARAM + "/" + bookId))
+                .andExpect(MockMvcResultMatchers.status().isOk());
+        verify(bookService, times(1)).deleteBook(bookId);
+    }
 
 
 }
