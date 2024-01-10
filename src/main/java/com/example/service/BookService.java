@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Optional;
+
 
 @Service
 @AllArgsConstructor
@@ -27,17 +29,9 @@ public class BookService {
 
     }
 
-    public Flux<BookResponse> searchByTitle(String title) {
-        return bookDao.searchByTitle(title)
-                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
-    }
 
-    public Flux<BookResponse> searchByAuthor(String author) {
-        return bookDao.searchByAuthor(author)
-                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
-    }
 
-    public Mono<BookResponse> updateBook(String id, BookUpdateRequest updateRequest) {
+    public Mono<String> updateBook(String id, BookUpdateRequest updateRequest) {
         return bookDao.findByBookId(id)
                 .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + id)))
                 .flatMap(bookDto -> {
@@ -48,24 +42,24 @@ public class BookService {
                         bookDto.setQuantity(updateRequest.getQuantity());
                     }
                     return bookDao.save(bookDto);
-                })
-                .map(bookdto -> translator.translate(bookdto, BookResponse.class));
+                });
 
     }
+    public Mono<BookResponse> getBook(String bookId) {
+        return bookDao.findByBookId(bookId)
+                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
+    }
 
-
-    public Mono<BookResponse> createBook(BookDto bookdto) {
+    public Mono<String> createBook(BookDto bookdto) {
         return bookDao.findByBookId(bookdto.getBookId())
                 .flatMap(existingBook -> {
                     if (existingBook != null) {
                         return Mono.error(new BookAlreadyPresentException("Book already present for bookId: " + bookdto.getBookId()));
                     } else {
-                        return bookDao.save(bookdto)
-                                .map(savedBook -> translator.translate(savedBook, BookResponse.class));
+                        return bookDao.save(bookdto);
                     }
                 })
-                .switchIfEmpty(bookDao.save(bookdto)
-                        .map(savedBook -> translator.translate(savedBook, BookResponse.class)));
+                .switchIfEmpty(bookDao.save(bookdto));
 
     }
 
@@ -80,4 +74,15 @@ public class BookService {
         return bookDao.searchByTitleAndAuthor(title, author)
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class));
     }
+    public Flux<BookResponse> searchByTitle(String title) {
+        return bookDao.searchByTitle(title)
+                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
+    }
+
+    public Flux<BookResponse> searchByAuthor(String author) {
+        return bookDao.searchByAuthor(author)
+                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
+    }
+
+
 }

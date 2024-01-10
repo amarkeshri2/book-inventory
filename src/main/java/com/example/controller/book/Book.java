@@ -1,25 +1,24 @@
-package com.example.dao.entity;
+package com.example.controller.book;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Document(collection = "Book")
-public class BookEntity {
-    @Id
-    private String id;
+public class Book {
+    @NotNull
     private String bookId;
+    @NotNull
     private String title;
+    @NotNull
     private List<String> authors;
-    private String image;
     private String description;
+    private String image;
     private Double price;
     private Integer quantity;
 }

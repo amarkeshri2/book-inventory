@@ -15,6 +15,6 @@ public class BookDto {
     private List<String> authors;
     private String image;
     private String description;
-    private double price;
-    private int quantity;
+    private Double price;
+    private Integer quantity;
 }

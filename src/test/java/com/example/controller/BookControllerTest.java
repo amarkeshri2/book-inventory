@@ -2,7 +2,7 @@ package com.example.controller;
 
 import com.example.Utils.BookUtil;
 import com.example.common.ObjectTranslator;
-import com.example.controller.request.BookRequest;
+import com.example.controller.book.Book;
 import com.example.controller.request.BookUpdateRequest;
 import com.example.controller.response.BookResponse;
 import com.example.dto.BookDto;
@@ -69,9 +69,9 @@ public class BookControllerTest {
     @Test
     public void testCreateBook() throws Exception {
         BookResponse response = BookUtil.getBookResponse();
-        BookRequest request = BookUtil.getbookRequest();
+        Book request = BookUtil.getbook();
         BookDto bookDto = BookUtil.getbookDto();
-        when(objectTranslator.translate(any(BookRequest.class), Mockito.eq(BookDto.class))).thenReturn(bookDto);
+        when(objectTranslator.translate(any(Book.class), Mockito.eq(BookDto.class))).thenReturn(bookDto);
         when(bookService.createBook(any(BookDto.class))).thenAnswer(invocation -> Mono.just(response));
 
         mockMvc

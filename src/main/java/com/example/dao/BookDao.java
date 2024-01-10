@@ -39,10 +39,11 @@ public class BookDao {
 
     }
 
-    public Mono<BookDto> save(BookDto bookDto) {
+    public Mono<String> save(BookDto bookDto) {
         BookEntity bookEntity = translator.translate(bookDto, BookEntity.class);
-        return bookRepository.save(bookEntity)
-                .map(book -> translator.translate(book, BookDto.class));
+        bookRepository.save(bookEntity);
+        return Mono.just(bookDto.getBookId());
+
     }
 
     public Mono<Void> deleteBook(String id) {

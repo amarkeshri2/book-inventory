@@ -1,6 +1,6 @@
 package com.example.Utils;
 
-import com.example.controller.request.BookRequest;
+import com.example.controller.book.Book;
 import com.example.controller.request.BookUpdateRequest;
 import com.example.controller.response.BookResponse;
 import com.example.dto.BookDto;
@@ -40,8 +40,8 @@ public class BookUtil {
         return response1;
     }
 
-    public static BookRequest getbookRequest() {
-        BookRequest book = new BookRequest();
+    public static Book getbook() {
+        Book book = new Book();
         book.setBookId("1L");
         book.setPrice(1.1);
         book.setQuantity(1);
