@@ -20,7 +20,8 @@ public class SecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/api/book/all").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers("/v1/book/all").hasAnyRole("USER", "ADMIN")
+                        .pathMatchers("v1/book/search").hasAnyRole("USER", "ADMIN")
                         .anyExchange().hasRole("ADMIN")
                 )
                 .httpBasic(withDefaults()) // Enable HTTP Basic Authentication

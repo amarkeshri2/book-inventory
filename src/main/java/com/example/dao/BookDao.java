@@ -9,8 +9,6 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
-
 @Repository
 @AllArgsConstructor
 public class BookDao {
@@ -39,10 +37,12 @@ public class BookDao {
 
     }
 
-    public Mono<String> save(BookDto bookDto) {
+    public Mono<BookDto> save(BookDto bookDto) {
         BookEntity bookEntity = translator.translate(bookDto, BookEntity.class);
-        bookRepository.save(bookEntity);
-        return Mono.just(bookDto.getBookId());
+        return bookRepository.save(bookEntity)
+                .map(entity -> translator.translate(entity, BookDto.class));
+
+
 
     }
 
