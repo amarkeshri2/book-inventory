@@ -32,8 +32,7 @@ public class GoogleBooksAPIService {
         Mono<GoogleBooksResponse> googleBooksResponse = webClient.get()
                 .uri(GOOGLE_BOOK_API_URI + "?q=" + query ).accept(MediaType.APPLICATION_JSON)
                 .retrieve()
-                .bodyToMono(GoogleBooksResponse.class)
-                ;
+                .bodyToMono(GoogleBooksResponse.class);
 
         return googleBooksResponse
                 .flatMapMany(res -> Flux.fromIterable(res.getItems()))

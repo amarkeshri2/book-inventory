@@ -82,7 +82,7 @@ public class BookController {
         Flux<Book> books = googleBooksAPIService.searchBooks(title, author);
         return books.collectList()
                 .map(book -> ResponseEntity.ok().body(book))
-                .onErrorResume(
+                .onErrorResume(BookNotFoundException.class,
                         ex -> Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).build())
                 )
                 .onErrorResume(throwable -> {
@@ -122,7 +122,7 @@ public class BookController {
                 .map(id -> ResponseEntity.status(HttpStatus.ACCEPTED).body(id))
                 .onErrorResume(
                         BookNotFoundException.class,
-                        ex -> Mono.just(ResponseEntity.status((HttpStatus.NOT_FOUND)).build())
+                        ex -> Mono.just(ResponseEntity.status((HttpStatus.BAD_REQUEST)).build())
                 )
                 .onErrorResume(
                         throwable -> {
@@ -142,7 +142,7 @@ public class BookController {
         return bookService.deleteBook(bookId)
                 .then(Mono.just(ResponseEntity.ok().<Void>build()))
                 .onErrorResume(BookNotFoundException.class,
-                        ex -> Mono.just(ResponseEntity.status(HttpStatus.NOT_FOUND).build())
+                        ex -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build())
                 )
                 .onErrorResume(throwable -> {
                     log.error("Error processing delete book request", throwable);
