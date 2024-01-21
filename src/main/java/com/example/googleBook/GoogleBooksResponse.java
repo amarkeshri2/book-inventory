@@ -18,11 +18,9 @@ public class GoogleBooksResponse {
     private String kind;
 
     @JsonProperty("totalItems")
-//    @JsonIgnore
     private int totalItems;
 
     @JsonProperty("items")
-//    @JsonIgnore
     private List<GoogleBookItem> items;
 
     @JsonIgnore
