@@ -127,4 +127,24 @@ public class BookUtil {
         book.setId("id");
         return book;
     }
+
+    public static List<BookDto> getBookDtoList() {
+        BookDto response1 = new BookDto();
+        response1.setBookId("1L");
+        response1.setPrice(1.1);
+        response1.setQuantity(1);
+        response1.setImage("abc");
+        response1.setAuthors(List.of(new String[]{"abc", "xyz"}));
+        response1.setTitle("abc");
+        response1.setDescription("book");
+        BookDto response2 = new BookDto();
+        response2.setBookId("2L");
+        response2.setPrice(1.1);
+        response2.setQuantity(1);
+        response2.setImage("abc");
+        response2.setAuthors(List.of(new String[]{"abc", "xyz"}));
+        response2.setTitle("abc");
+        response2.setDescription("book");
+        return List.of(response1,response2);
+    }
 }

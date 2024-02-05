@@ -18,6 +18,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -38,17 +40,18 @@ public class BookServiceTest {
 
     @Test
     public void testGetAllBook() {
-        BookDto mockBookDto = BookUtil.getBookDto();
-        when(bookDao.findByBookId(anyString())).thenReturn(Mono.just(mockBookDto));
-
-        BookResponse mockBookResponse = BookUtil.getBookResponse();
-        when(objectTranslator.translate(any(BookDto.class), Mockito.eq(BookResponse.class))).thenReturn(mockBookResponse);
+        List<BookDto> mockBookDto = BookUtil.getBookDtoList();
+        List<BookResponse> mockBookResponseList = BookUtil.getBookResponseList();
+        when(bookDao.getAllBooks()).thenReturn(Flux.fromIterable(mockBookDto));
+        when(objectTranslator.translate(any(BookDto.class), any())).thenReturn(mockBookResponseList.get(0), mockBookResponseList.get(1));
 
         Flux<BookResponse> result = bookService.getAllBooks();
 
         StepVerifier.create(result)
-                .expectNext(mockBookResponse)
-                .verifyComplete();
+                .expectNext(mockBookResponseList.get(0))
+                .expectNext(mockBookResponseList.get(1))
+                .expectComplete()
+                .verify();
     }
 
     @Test
@@ -142,6 +145,7 @@ public class BookServiceTest {
         BookDto bookDto = BookUtil.getBookDto();
 
         when(bookDao.findByBookId(bookDto.getBookId())).thenReturn(Mono.just(bookDto));
+        when(bookDao.save(any(BookDto.class))).thenReturn(Mono.empty());
 
         Mono<BookResponse> result = bookService.createBook(bookDto);
 
@@ -152,10 +156,11 @@ public class BookServiceTest {
 
     @Test
     public void testDeleteBook() {
-        String bookId = "7";
+        String bookId = "1L";
         BookDto mockBookDto = BookUtil.getBookDto();
-        when(bookDao.findByBookId(bookId)).thenReturn(Mono.just(mockBookDto));
-        when(bookDao.deleteBook(bookId)).thenReturn(Mono.empty());
+
+        when(bookDao.findByBookId(any(String.class))).thenReturn(Mono.just(mockBookDto));
+        when(bookDao.deleteBook(any(String.class))).thenReturn(Mono.empty());
 
         Mono<Void> result = bookService.deleteBook(bookId);
 

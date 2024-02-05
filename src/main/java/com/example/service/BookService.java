@@ -32,16 +32,16 @@ public class BookService {
     }
 
     public Mono<String> updateBook(String bookId, BookUpdateRequest updateRequest) {
-        return bookDao.findByBookId(bookId)
-                .flatMap(bookDto -> {
+        Mono<BookDto> bookDtoMono = bookDao.findByBookId(bookId);
+        return bookDtoMono.flatMap(bookDto -> {
                     if (updateRequest.getPrice() != null) {
                         bookDto.setPrice(updateRequest.getPrice());
                     }
                     if (updateRequest.getQuantity() != null) {
                         bookDto.setQuantity(updateRequest.getQuantity());
                     }
-                    bookDao.save(bookDto);
-                    return Mono.just(bookDto.getBookId());
+                    return bookDao.save(bookDto)
+                            .thenReturn(bookDto.getBookId());
                 })
                 .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + bookId)));
 
@@ -56,39 +56,40 @@ public class BookService {
     public Mono<BookResponse> createBook(BookDto bookdto) {
         return bookDao.findByBookId(bookdto.getBookId())
                 .flatMap(existingBook -> {
-                            if(existingBook != null)
-                                return Mono.error(new BookAlreadyPresentException("Book already present for bookId: " + bookdto.getBookId()));
-                            else {
-                                return bookDao.save(bookdto)
-                                        .map(dto -> translator.translate(dto, BookResponse.class));
-
-                            }
-                        }
-                )
-                .switchIfEmpty(bookDao.save(bookdto).map(dto -> translator.translate(dto, BookResponse.class)));
+                    if (existingBook != null)
+                        return Mono.error(new BookAlreadyPresentException("Book already present for bookId: " + bookdto.getBookId()));
+                    else {
+                        return bookDao.save(bookdto)
+                                .map(dto -> translator.translate(dto, BookResponse.class));
+                    }
+                })
+                .switchIfEmpty(bookDao.save(bookdto)
+                        .map(dto -> translator.translate(dto, BookResponse.class)));
     }
-
 
     public Mono<Void> deleteBook(String id) {
         return bookDao.findByBookId(id)
+                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + id)))
                 .flatMap(existing -> bookDao.deleteBook(existing.getBookId()))
-                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + id)));
-
+                .then();
     }
 
     public Flux<BookResponse> searchByTitleAndAuthor(String title, String author) {
         return bookDao.searchByTitleAndAuthor(title, author)
-                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
+                .map(bookDto -> translator.translate(bookDto, BookResponse.class))
+                .switchIfEmpty(Mono.error(new BookNotFoundException("No Book found")));
     }
 
     public Flux<BookResponse> searchByTitle(String title) {
         return bookDao.searchByTitle(title)
-                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
+                .map(bookDto -> translator.translate(bookDto, BookResponse.class))
+                .switchIfEmpty(Mono.error(new BookNotFoundException("No Book found")));
     }
 
     public Flux<BookResponse> searchByAuthor(String author) {
         return bookDao.searchByAuthor(author)
-                .map(bookDto -> translator.translate(bookDto, BookResponse.class));
+                .map(bookDto -> translator.translate(bookDto, BookResponse.class))
+                .switchIfEmpty(Mono.error(new BookNotFoundException("No Book found")));
     }
 
 

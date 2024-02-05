@@ -6,8 +6,12 @@ import com.example.controller.request.BookUpdateRequest;
 import com.example.controller.response.BookResponse;
 import com.example.dto.BookDto;
 import com.example.exceptions.BookNotFoundException;
+import com.example.common.BookEventPayload;
+import com.example.producer.BookProducer;
 import com.example.service.BookService;
 import com.example.service.GoogleBooksAPIService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,18 +20,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import com.example.exceptions.BookAlreadyPresentException;
 
 import javax.validation.Valid;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 
 @RestController
-@RequestMapping("/v1/book")
 @AllArgsConstructor
+@RequestMapping("/v1/book")
 public class BookController {
     @Autowired
     private final BookService bookService;
@@ -35,6 +39,9 @@ public class BookController {
     private final ObjectTranslator translator;
     @Autowired
     private final GoogleBooksAPIService googleBooksAPIService;
+    @Autowired
+    private final BookProducer bookProducer;
+
     private static final Logger log = LoggerFactory.getLogger(BookController.class);
 
     @GetMapping("/all")
@@ -97,11 +104,24 @@ public class BookController {
     public Mono<ResponseEntity<BookResponse>> createBook(@Valid @RequestBody Book book) {
         log.info("Received request to create book {} :", book);
         BookDto bookDto = translator.translate(book, BookDto.class);
-        return bookService.createBook(bookDto)
+        return bookService.createBook(bookDto).
+                doOnSuccess(createdBook -> {
+                    try {
+                        BookEventPayload payload = translator.translate(createdBook, BookEventPayload.class);
+                        payload.setTime(ZonedDateTime.now().toString());
+                        payload.setEventType("CREATE");
+                        log.info("Published book create event {}:", payload);
+                        bookProducer.sendEvent(payload);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .map(id -> ResponseEntity.status(HttpStatus.CREATED).body(id))
                 .onErrorResume(
                         BookAlreadyPresentException.class,
-                        ex -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build())
+                        ex -> { log.error("Book already present with bookId {} :", bookDto.getBookId());
+                            return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
+                        }
                 )
                 .onErrorResume(
                         throwable -> {
@@ -115,14 +135,14 @@ public class BookController {
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<String>> updateBook(
-            @PathVariable String bookId,
+            @PathVariable String id,
             @Valid @RequestBody BookUpdateRequest updateRequest) {
-        log.info("Received request to update book with ID {} :", bookId);
-        return bookService.updateBook(bookId, updateRequest)
-                .map(id -> ResponseEntity.status(HttpStatus.ACCEPTED).body(id))
+        log.info("Received request to update book with ID {} :", id);
+        return bookService.updateBook(id, updateRequest)
+                .map(bookId -> ResponseEntity.status(HttpStatus.ACCEPTED).body(bookId))
                 .onErrorResume(
                         BookNotFoundException.class,
-                        ex -> Mono.just(ResponseEntity.status((HttpStatus.BAD_REQUEST)).build())
+                        ex -> Mono.just(ResponseEntity.status((HttpStatus.NOT_FOUND)).build())
                 )
                 .onErrorResume(
                         throwable -> {
@@ -137,9 +157,9 @@ public class BookController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<Void>> deleteBook(@PathVariable String bookId) {
-        log.info("Received request to delete book with ID {} :", bookId);
-        return bookService.deleteBook(bookId)
+    public Mono<ResponseEntity<Void>> deleteBook(@PathVariable String id) {
+        log.info("Received request to delete book with ID {} :", id);
+        return bookService.deleteBook(id)
                 .then(Mono.just(ResponseEntity.ok().<Void>build()))
                 .onErrorResume(BookNotFoundException.class,
                         ex -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build())
