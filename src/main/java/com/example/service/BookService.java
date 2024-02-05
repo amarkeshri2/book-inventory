@@ -31,7 +31,7 @@ public class BookService {
 
     }
 
-    public Mono<String> updateBook(String bookId, BookUpdateRequest updateRequest) {
+    public Mono<BookResponse> updateBook(String bookId, BookUpdateRequest updateRequest) {
         Mono<BookDto> bookDtoMono = bookDao.findByBookId(bookId);
         return bookDtoMono.flatMap(bookDto -> {
                     if (updateRequest.getPrice() != null) {
@@ -41,7 +41,7 @@ public class BookService {
                         bookDto.setQuantity(updateRequest.getQuantity());
                     }
                     return bookDao.save(bookDto)
-                            .thenReturn(bookDto.getBookId());
+                            .map(dto -> translator.translate(dto, BookResponse.class));
                 })
                 .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + bookId)));
 

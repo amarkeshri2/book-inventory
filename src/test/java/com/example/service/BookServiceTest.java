@@ -70,14 +70,14 @@ public class BookServiceTest {
         String bookId = "1L";
         BookUpdateRequest updateRequest = BookUtil.getBookUpdateRequest();
         BookDto mockBookDto = BookUtil.getBookDto();
-
+        BookResponse response = BookUtil.getBookResponse();
         when(bookDao.findByBookId(bookId)).thenReturn(Mono.just(mockBookDto));
         when(bookDao.save(mockBookDto)).thenReturn(Mono.just(mockBookDto));
-
-        Mono<String> result = bookService.updateBook(bookId, updateRequest);
+        when(objectTranslator.translate(any(BookDto.class), Mockito.eq(BookResponse.class))).thenReturn(response);
+        Mono<BookResponse> result = bookService.updateBook(bookId, updateRequest);
 
         StepVerifier.create(result)
-                .expectNext(bookId)
+                .expectNext(response)
                 .verifyComplete();
     }
 
@@ -88,7 +88,7 @@ public class BookServiceTest {
 
         when(bookDao.findByBookId(bookId)).thenReturn(Mono.empty());
 
-        Mono<String> result = bookService.updateBook(bookId, updateRequest);
+        Mono<BookResponse> result = bookService.updateBook(bookId, updateRequest);
 
         StepVerifier.create(result)
                 .expectError(BookNotFoundException.class)

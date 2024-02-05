@@ -1,5 +1,6 @@
 package com.example.Utils;
 
+import com.example.common.BookEventPayload;
 import com.example.controller.book.Book;
 import com.example.controller.request.BookUpdateRequest;
 import com.example.controller.response.BookResponse;
@@ -10,6 +11,7 @@ import com.example.googleBook.GoogleBooksResponse;
 import com.example.googleBook.ImageLink;
 import com.example.googleBook.VolumeInfo;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 public class BookUtil {
@@ -146,5 +148,19 @@ public class BookUtil {
         response2.setTitle("abc");
         response2.setDescription("book");
         return List.of(response1,response2);
+    }
+
+    public static BookEventPayload getEventPayload() {
+        BookEventPayload book = new BookEventPayload();
+        book.setBookId("1L");
+        book.setPrice(1.1);
+        book.setQuantity(1);
+        book.setImage("abc");
+        book.setAuthors(List.of(new String[]{"abc", "xyz"}));
+        book.setTitle("abc");
+        book.setDescription("book");
+        book.setTime(ZonedDateTime.now().toString());
+        book.setEventType("CREATE");
+        return book;
     }
 }

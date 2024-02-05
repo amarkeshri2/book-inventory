@@ -102,24 +102,24 @@ public class BookController {
     @PostMapping()
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<BookResponse>> createBook(@Valid @RequestBody Book book) {
-        log.info("Received request to create book {} :", book);
+        log.info("Received request to create book : {}", book);
         BookDto bookDto = translator.translate(book, BookDto.class);
-        return bookService.createBook(bookDto).
-                doOnSuccess(createdBook -> {
+        return bookService.createBook(bookDto)
+                .doOnSuccess(createdBook -> {
                     try {
                         BookEventPayload payload = translator.translate(createdBook, BookEventPayload.class);
                         payload.setTime(ZonedDateTime.now().toString());
                         payload.setEventType("CREATE");
-                        log.info("Published book create event {}:", payload);
+                        log.info("Going to publish create event : {}", payload);
                         bookProducer.sendEvent(payload);
                     } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                     }
                 })
-                .map(id -> ResponseEntity.status(HttpStatus.CREATED).body(id))
+                .map(bookdto1 -> ResponseEntity.status(HttpStatus.CREATED).body(bookdto1))
                 .onErrorResume(
                         BookAlreadyPresentException.class,
-                        ex -> { log.error("Book already present with bookId {} :", bookDto.getBookId());
+                        ex -> { log.error("Book already present with bookId : {}", bookDto.getBookId());
                             return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build());
                         }
                 )
@@ -134,12 +134,23 @@ public class BookController {
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public Mono<ResponseEntity<String>> updateBook(
+    public Mono<ResponseEntity<BookResponse>> updateBook(
             @PathVariable String id,
             @Valid @RequestBody BookUpdateRequest updateRequest) {
-        log.info("Received request to update book with ID {} :", id);
+        log.info("Received request to update book with ID : {}", id);
         return bookService.updateBook(id, updateRequest)
-                .map(bookId -> ResponseEntity.status(HttpStatus.ACCEPTED).body(bookId))
+                .doOnSuccess(updatedBook -> {
+                    try {
+                        BookEventPayload payload = translator.translate(updatedBook, BookEventPayload.class);
+                        payload.setTime(ZonedDateTime.now().toString());
+                        payload.setEventType("UPDATE");
+                        log.info("Going to publish update event : {}", payload);
+                        bookProducer.sendEvent(payload);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .map(bookResponse -> ResponseEntity.status(HttpStatus.ACCEPTED).body(bookResponse))
                 .onErrorResume(
                         BookNotFoundException.class,
                         ex -> Mono.just(ResponseEntity.status((HttpStatus.NOT_FOUND)).build())
@@ -160,6 +171,18 @@ public class BookController {
     public Mono<ResponseEntity<Void>> deleteBook(@PathVariable String id) {
         log.info("Received request to delete book with ID {} :", id);
         return bookService.deleteBook(id)
+                .doOnSuccess(ex -> {
+                    try {
+                        BookEventPayload payload = new BookEventPayload();
+                        payload.setBookId(id);
+                        payload.setTime(ZonedDateTime.now().toString());
+                        payload.setEventType("DELETE");
+                        log.info("Going to publish delete event : {}", payload);
+                        bookProducer.sendEvent(payload);
+                    } catch (JsonProcessingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
                 .then(Mono.just(ResponseEntity.ok().<Void>build()))
                 .onErrorResume(BookNotFoundException.class,
                         ex -> Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).build())

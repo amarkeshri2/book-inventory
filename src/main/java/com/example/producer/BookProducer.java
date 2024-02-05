@@ -23,7 +23,7 @@ public class BookProducer {
         log.info("Start of kafka");
         String payload = objectMapper.writeValueAsString(eventPayload);
         this.kafkaTemplate.send(topic, payload);
-        log.info("payload sent to kafka {} :", payload);
+        log.info("event sent on kafka : {}", payload);
         log.info("End of kafka");
     }
 }

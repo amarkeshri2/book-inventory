@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.Utils.BookUtil;
+import com.example.common.BookEventPayload;
 import com.example.common.ObjectTranslator;
 import com.example.config.TestSecurityConfig;
 import com.example.controller.book.Book;
@@ -77,9 +78,10 @@ public class BookControllerTest {
         BookResponse response = BookUtil.getBookResponse();
         Book request = BookUtil.getbook();
         BookDto bookDto = BookUtil.getBookDto();
+        BookEventPayload payload = BookUtil.getEventPayload();
         when(objectTranslator.translate(any(Book.class), Mockito.eq(BookDto.class))).thenReturn(bookDto);
         when(bookService.createBook(any(BookDto.class))).thenReturn(Mono.just(response));
-
+        when(objectTranslator.translate(any(BookResponse.class), Mockito.eq(BookEventPayload.class))).thenReturn(payload);
         webTestClient.post().uri(BASE_URI)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
@@ -97,14 +99,16 @@ public class BookControllerTest {
     void testUpdateBook() {
         String bookId = "1L";
         BookUpdateRequest request = BookUtil.getBookUpdateRequest();
-        when(bookService.updateBook(bookId, request)).thenReturn(Mono.just(bookId));
-
+        BookEventPayload payload = BookUtil.getEventPayload();
+        BookResponse response = BookUtil.getBookResponse();
+        when(bookService.updateBook(bookId, request)).thenReturn(Mono.just(response));
+        when(objectTranslator.translate(any(BookResponse.class), Mockito.eq(BookEventPayload.class))).thenReturn(payload);
         webTestClient.patch().uri(BASE_URI + "/" + bookId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(request)
+                .bodyValue( request)
                 .exchange()
                 .expectStatus().isAccepted()
-                .expectBody(String.class).isEqualTo(bookId);
+                .expectBody(BookResponse.class).isEqualTo(response);
 
         verify(bookService, times(1)).updateBook(bookId, request);
     }
