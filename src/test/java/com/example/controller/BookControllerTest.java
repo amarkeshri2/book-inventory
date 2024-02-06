@@ -186,11 +186,11 @@ public class BookControllerTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void testCreateBookWithExistingBookException() throws Exception {
+    void testCreateBookWithExistingBookException() {
         Book request = BookUtil.getbook();
         BookDto bookDto = BookUtil.getBookDto();
         when(objectTranslator.translate(any(Book.class), Mockito.eq(BookDto.class))).thenReturn(bookDto);
-        when(bookService.createBook(bookDto)).thenThrow(new BookAlreadyPresentException("Book Already present"));
+        when(bookService.createBook(bookDto)).thenReturn(Mono.error(new BookAlreadyPresentException("Book Already present")));
 
         webTestClient.post().uri(BASE_URI)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -208,13 +208,13 @@ public class BookControllerTest {
     void testUpdateNonexistentBookException() {
         String bookId = "1L";
         BookUpdateRequest request = BookUtil.getBookUpdateRequest();
-        when(bookService.updateBook(bookId, request)).thenThrow(new BookNotFoundException("No Book found"));
+        when(bookService.updateBook(bookId, request)).thenReturn(Mono.error(new BookNotFoundException("Book not found")));
 
         webTestClient.patch().uri(BASE_URI + "/" + bookId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus().isNotFound();
 
         verify(bookService, times(1)).updateBook(bookId, request);
     }
@@ -224,11 +224,11 @@ public class BookControllerTest {
     @WithMockUser(roles = "ADMIN")
     void testDeleteNonexistentBookException() {
         String bookId = "1L";
-        when(bookService.deleteBook(bookId)).thenThrow(new BookNotFoundException("No Book found"));
+        when(bookService.deleteBook(bookId)).thenReturn(Mono.error(new BookNotFoundException("Book not found")));
 
         webTestClient.delete().uri(BASE_URI + "/" + bookId)
                 .exchange()
-                .expectStatus().isBadRequest();
+                .expectStatus().isNotFound();
 
         verify(bookService, times(1)).deleteBook(bookId);
     }
@@ -238,7 +238,7 @@ public class BookControllerTest {
     @WithMockUser(roles = "ADMIN")
     void testGetNonexistentBookByIdException() {
         String bookId = "1L";
-        when(bookService.getBook(bookId)).thenThrow(new BookNotFoundException("No Book found"));
+        when(bookService.getBook(bookId)).thenReturn(Mono.error(new BookNotFoundException("Book not found")));
 
         webTestClient.get().uri(BASE_URI + "/" + bookId)
                 .exchange()
@@ -253,7 +253,7 @@ public class BookControllerTest {
     void testGlobalSearchBooksException() {
         String title = "Sample Title";
         String author = "Sample Author";
-        when(googleBooksAPIService.searchBooks(title, author)).thenThrow(new BookNotFoundException("No Book found"));
+        when(googleBooksAPIService.searchBooks(title, author)).thenReturn(Flux.error(new BookNotFoundException("Book not found")));
 
         webTestClient.get().uri(uriBuilder -> uriBuilder.path(BASE_URI + "/global-search")
                         .queryParam("title", title)
@@ -271,7 +271,7 @@ public class BookControllerTest {
     void testSearchBooksException() {
         String title = "Sample Title";
         String author = "Sample Author";
-        when(bookService.searchByTitleAndAuthor(title, author)).thenThrow(new BookNotFoundException("No Book Found"));
+        when(bookService.searchByTitleAndAuthor(title, author)).thenReturn(Flux.error(new BookNotFoundException("Book not found")));
 
         webTestClient.get().uri(uriBuilder -> uriBuilder.path(BASE_URI + "/search")
                         .queryParam("title", title)

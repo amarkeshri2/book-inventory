@@ -38,7 +38,7 @@ public class GoogleBooksAPIService {
         return googleBooksResponse
                 .flatMapMany(res -> Flux.fromIterable(res.getItems()))
                 .map(this::mapToBook)
-                .switchIfEmpty(Mono.error(new BookNotFoundException("No book found")));
+                .switchIfEmpty(Flux.error(new BookNotFoundException("No book found")));
     }
 
     private Book mapToBook(GoogleBookItem item) {

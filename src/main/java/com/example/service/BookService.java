@@ -27,7 +27,7 @@ public class BookService {
     public Flux<BookResponse> getAllBooks() {
         return bookDao.getAllBooks()
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class))
-                .switchIfEmpty(Mono.error(new BookNotFoundException("No book found")));
+                .switchIfEmpty(Flux.error(new BookNotFoundException("No book found")));
 
     }
 
@@ -83,13 +83,13 @@ public class BookService {
     public Flux<BookResponse> searchByTitle(String title) {
         return bookDao.searchByTitle(title)
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class))
-                .switchIfEmpty(Mono.error(new BookNotFoundException("No Book found")));
+                .switchIfEmpty(Flux.error(new BookNotFoundException("No Book found")));
     }
 
     public Flux<BookResponse> searchByAuthor(String author) {
         return bookDao.searchByAuthor(author)
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class))
-                .switchIfEmpty(Mono.error(new BookNotFoundException("No Book found")));
+                .switchIfEmpty(Flux.error(new BookNotFoundException("No Book found")));
     }
 
 
