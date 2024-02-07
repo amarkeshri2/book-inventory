@@ -3,8 +3,10 @@ package com.example.Utils;
 import com.example.common.BookEventPayload;
 import com.example.controller.book.Book;
 import com.example.controller.request.BookUpdateRequest;
+import com.example.controller.response.AuditResponse;
 import com.example.controller.response.BookResponse;
 import com.example.dao.entity.BookEntity;
+import com.example.dto.AuditDto;
 import com.example.dto.BookDto;
 import com.example.googleBook.GoogleBookItem;
 import com.example.googleBook.GoogleBooksResponse;
@@ -162,5 +164,17 @@ public class BookUtil {
         book.setTime(ZonedDateTime.now().toString());
         book.setEventType("CREATE");
         return book;
+    }
+
+    public static List<AuditResponse> getAuditResponseList() {
+        AuditResponse response1 = new AuditResponse("1L", "CREATE", "2024-02-07T12:08:06.651927800");
+        AuditResponse response2 = new AuditResponse("1L" , "UPDATE", "2024-02-07T12:10:06.651927800");
+        return List.of(response1, response2);
+    }
+
+    public static List<AuditDto> getAuditDtoList() {
+        AuditDto response1 = new AuditDto("1L", "CREATE", "2024-02-07T12:08:06.651927800");
+        AuditDto response2 = new AuditDto("1L" , "UPDATE", "2024-02-07T12:10:06.651927800");
+        return List.of(response1, response2);
     }
 }

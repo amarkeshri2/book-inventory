@@ -3,8 +3,10 @@ package com.example.controller;
 import com.example.controller.book.Book;
 import com.example.common.ObjectTranslator;
 import com.example.controller.request.BookUpdateRequest;
+import com.example.controller.response.AuditResponse;
 import com.example.controller.response.BookResponse;
 import com.example.dto.BookDto;
+import com.example.exceptions.AuditNotFound;
 import com.example.exceptions.BookNotFoundException;
 import com.example.common.BookEventPayload;
 import com.example.producer.BookProducer;
@@ -223,6 +225,22 @@ public class BookController {
                         return Mono.just(ResponseEntity.status((HttpStatus.NOT_FOUND)).build());
                     } else {
                         log.error("Error processing search book request {}", err.getMessage());
+                        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+                    }
+                });
+    }
+
+    @GetMapping("/audit/{id}")
+    @PreAuthorize(("hasRole('ADMIN')"))
+    public Mono<ResponseEntity<List<AuditResponse>>> getAuditById(@PathVariable String id) {
+        return bookService.getAudits(id).collectList()
+                .map(audit -> ResponseEntity.ok().body(audit))
+                .onErrorResume(err -> {
+                    if (err instanceof AuditNotFound) {
+                        log.error("Exception occurred {}", err.getMessage());
+                        return Mono.just(ResponseEntity.status((HttpStatus.NOT_FOUND)).build());
+                    } else {
+                        log.error("Error processing get book request {}", err.getMessage());
                         return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
                     }
                 });

@@ -6,8 +6,10 @@ import com.example.common.ObjectTranslator;
 import com.example.config.TestSecurityConfig;
 import com.example.controller.book.Book;
 import com.example.controller.request.BookUpdateRequest;
+import com.example.controller.response.AuditResponse;
 import com.example.controller.response.BookResponse;
 import com.example.dto.BookDto;
+import com.example.exceptions.AuditNotFound;
 import com.example.exceptions.BookAlreadyPresentException;
 import com.example.exceptions.BookNotFoundException;
 import com.example.producer.BookProducer;
@@ -31,7 +33,9 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -105,7 +109,7 @@ public class BookControllerTest {
         when(objectTranslator.translate(any(BookResponse.class), Mockito.eq(BookEventPayload.class))).thenReturn(payload);
         webTestClient.patch().uri(BASE_URI + "/" + bookId)
                 .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue( request)
+                .bodyValue(request)
                 .exchange()
                 .expectStatus().isAccepted()
                 .expectBody(BookResponse.class).isEqualTo(response);
@@ -283,4 +287,32 @@ public class BookControllerTest {
         verify(bookService, times(1)).searchByTitleAndAuthor(title, author);
     }
 
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testGetAuditsById() {
+        String bookId = "1L";
+        List<AuditResponse> responses = BookUtil.getAuditResponseList();
+        when(bookService.getAudits(bookId)).thenReturn(Flux.fromIterable(responses));
+        webTestClient
+                .get().uri(BASE_URI + "/audit/" + bookId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isOk();
+        verify(bookService, times(1)).getAudits(bookId);
+
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testGetAuditsByIdExceptionNotFound() {
+        String bookId = "1L";
+        when(bookService.getAudits(bookId)).thenReturn(Flux.error(new AuditNotFound("No Audit Found")));
+        webTestClient
+                .get().uri(BASE_URI + "/audit/" + bookId)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isNotFound();
+        verify(bookService, times(1)).getAudits(bookId);
+
+    }
 }

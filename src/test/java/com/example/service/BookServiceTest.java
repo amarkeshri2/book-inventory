@@ -3,9 +3,13 @@ package com.example.service;
 import com.example.Utils.BookUtil;
 import com.example.common.ObjectTranslator;
 import com.example.controller.request.BookUpdateRequest;
+import com.example.controller.response.AuditResponse;
 import com.example.controller.response.BookResponse;
+import com.example.dao.AuditDao;
 import com.example.dao.BookDao;
+import com.example.dto.AuditDto;
 import com.example.dto.BookDto;
+import com.example.exceptions.AuditNotFound;
 import com.example.exceptions.BookAlreadyPresentException;
 import com.example.exceptions.BookNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +36,9 @@ public class BookServiceTest {
     private BookDao bookDao;
     @Mock
     private ObjectTranslator objectTranslator;
+
+    @Mock
+    private AuditDao auditDao;
 
     @BeforeEach
     public void setUp() {
@@ -235,6 +242,34 @@ public class BookServiceTest {
                 .verifyComplete();
     }
 
+    @Test
+    void testGetAuditsByBookId(){
+        List<AuditDto> auditDtos = BookUtil.getAuditDtoList();
+        List<AuditResponse> responses = BookUtil.getAuditResponseList();
+
+        String bookId= "1L";
+
+        when(auditDao.getAudits(bookId)).thenReturn(Flux.fromIterable(auditDtos));
+        when(objectTranslator.translate(any(AuditDto.class), Mockito.eq(AuditResponse.class))).thenReturn(responses.get(0), responses.get(1));
+
+        Flux<AuditResponse> result = bookService.getAudits(bookId);
+        StepVerifier.create(result)
+                .expectNext(responses.get(0))
+                .expectNext(responses.get(1))
+                .verifyComplete();
+    }
+
+
+    @Test
+    void testGetAuditsNoAuditFound() {
+        String bookId = "1L";
+        when(auditDao.getAudits(bookId)).thenReturn(Flux.empty());
+
+        Flux<AuditResponse> result = bookService.getAudits(bookId);
+        StepVerifier.create(result)
+                .expectError(AuditNotFound.class)
+                .verify();
+    }
 }
 
 

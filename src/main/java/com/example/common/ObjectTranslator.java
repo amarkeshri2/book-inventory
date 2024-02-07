@@ -1,6 +1,8 @@
 package com.example.common;
 
 
+import com.example.dao.entity.AuditEntity;
+import com.example.dto.AuditDto;
 import lombok.Getter;
 import lombok.Setter;
 import org.modelmapper.ModelMapper;
@@ -32,5 +34,13 @@ public class ObjectTranslator {
         return entities.stream()
                 .map(source -> modelMapper.map(source, targetType))
                 .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    public AuditEntity translateToAuditEntity(AuditDto auditDto) {
+        AuditEntity auditEntity = new AuditEntity();
+        auditEntity.setBookId(auditDto.getBookId());
+        auditEntity.setTime(auditDto.getTime());
+        auditEntity.setType(auditDto.getType());
+        return auditEntity;
     }
 }

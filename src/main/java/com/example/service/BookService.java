@@ -2,9 +2,12 @@ package com.example.service;
 
 import com.example.common.ObjectTranslator;
 import com.example.controller.request.BookUpdateRequest;
+import com.example.controller.response.AuditResponse;
 import com.example.controller.response.BookResponse;
+import com.example.dao.AuditDao;
 import com.example.dao.BookDao;
 import com.example.dto.BookDto;
+import com.example.exceptions.AuditNotFound;
 import com.example.exceptions.BookAlreadyPresentException;
 import com.example.exceptions.BookNotFoundException;
 import lombok.AllArgsConstructor;
@@ -22,7 +25,7 @@ public class BookService {
 
     private final BookDao bookDao;
     private final ObjectTranslator translator;
-
+    private final AuditDao auditDao;
 
     public Flux<BookResponse> getAllBooks() {
         return bookDao.getAllBooks()
@@ -90,6 +93,11 @@ public class BookService {
         return bookDao.searchByAuthor(author)
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class))
                 .switchIfEmpty(Flux.error(new BookNotFoundException("No Book found")));
+    }
+    public Flux<AuditResponse> getAudits(String id){
+        return auditDao.getAudits(id)
+                .map(auditDto -> translator.translate(auditDto, AuditResponse.class))
+                .switchIfEmpty(Flux.error(new AuditNotFound("No audit history found for book with id: "+ id)));
     }
 
 

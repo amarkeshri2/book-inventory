@@ -2,8 +2,11 @@ package com.example.dao;
 
 import com.example.Utils.BookUtil;
 import com.example.common.ObjectTranslator;
+import com.example.dao.entity.AuditEntity;
 import com.example.dao.entity.BookEntity;
+import com.example.dao.repository.AuditRepository;
 import com.example.dao.repository.BookRepository;
+import com.example.dto.AuditDto;
 import com.example.dto.BookDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +19,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 public class BookDaoTest {
@@ -34,7 +38,7 @@ public class BookDaoTest {
     }
 
     @Test
-    public void testGetAllBooks() {
+    void testGetAllBooks() {
         BookEntity bookEntity = BookUtil.getBookEntity();
         BookDto bookDto = BookUtil.getBookDto();
         when(bookRepository.findAll())
@@ -170,4 +174,5 @@ public class BookDaoTest {
                 .expectNextCount(1)
                 .verifyComplete();
     }
+
 }
