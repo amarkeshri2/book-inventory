@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.example.common.ObjectTranslator;
+
 import com.example.controller.request.BookUpdateRequest;
 import com.example.controller.response.AuditResponse;
 import com.example.controller.response.BookResponse;
@@ -11,12 +12,12 @@ import com.example.exceptions.AuditNotFound;
 import com.example.exceptions.BookAlreadyPresentException;
 import com.example.exceptions.BookNotFoundException;
 import lombok.AllArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
-import java.util.Optional;
 
 
 @Service
@@ -26,7 +27,7 @@ public class BookService {
     private final BookDao bookDao;
     private final ObjectTranslator translator;
     private final AuditDao auditDao;
-
+    private static final Logger log = LoggerFactory.getLogger(BookService.class);
     public Flux<BookResponse> getAllBooks() {
         return bookDao.getAllBooks()
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class))
@@ -46,21 +47,21 @@ public class BookService {
                     return bookDao.save(bookDto)
                             .map(dto -> translator.translate(dto, BookResponse.class));
                 })
-                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + bookId)));
+                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found with bookId: " + bookId)));
 
     }
 
     public Mono<BookResponse> getBook(String bookId) {
         return bookDao.findByBookId(bookId)
                 .map(bookDto -> translator.translate(bookDto, BookResponse.class))
-                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + bookId)));
+                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found with bookId: " + bookId)));
     }
 
     public Mono<BookResponse> createBook(BookDto bookdto) {
         return bookDao.findByBookId(bookdto.getBookId())
                 .flatMap(existingBook -> {
                     if (existingBook != null)
-                        return Mono.error(new BookAlreadyPresentException("Book already present for bookId: " + bookdto.getBookId()));
+                        return Mono.error(new BookAlreadyPresentException("Book already present with bookId: " + bookdto.getBookId()));
                     else {
                         return bookDao.save(bookdto)
                                 .map(dto -> translator.translate(dto, BookResponse.class));
@@ -72,7 +73,7 @@ public class BookService {
 
     public Mono<Void> deleteBook(String id) {
         return bookDao.findByBookId(id)
-                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found for bookId: " + id)))
+                .switchIfEmpty(Mono.error(new BookNotFoundException("Book not found with bookId: " + id)))
                 .flatMap(existing -> bookDao.deleteBook(existing.getBookId()))
                 .then();
     }
@@ -97,7 +98,7 @@ public class BookService {
     public Flux<AuditResponse> getAudits(String id){
         return auditDao.getAudits(id)
                 .map(auditDto -> translator.translate(auditDto, AuditResponse.class))
-                .switchIfEmpty(Flux.error(new AuditNotFound("No audit history found for book with id: "+ id)));
+                .switchIfEmpty(Flux.error(new AuditNotFound("No audit history found for book with bookId: "+ id)));
     }
 
 

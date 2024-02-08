@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -34,6 +35,7 @@ import java.util.List;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/v1/book")
+@Validated
 public class BookController {
     @Autowired
     private final BookService bookService;
@@ -119,6 +121,7 @@ public class BookController {
                         log.info("Going to publish create event : {}", payload);
                         bookProducer.sendEvent(payload);
                     } catch (JsonProcessingException e) {
+                        log.info("Error occurred during json parsing: {}", e.getMessage());
                         throw new RuntimeException(e);
                     }
                 })
@@ -139,8 +142,12 @@ public class BookController {
     @PreAuthorize("hasRole('ADMIN')")
     public Mono<ResponseEntity<BookResponse>> updateBook(
             @PathVariable String id,
-            @Valid @RequestBody BookUpdateRequest updateRequest) {
+            @RequestBody @Valid final BookUpdateRequest updateRequest) {
         log.info("Received request to update book with ID : {}", id);
+        if(updateRequest.getQuantity() ==null && updateRequest.getPrice() == null){
+            log.info("both quantity and price is null");
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
         return bookService.updateBook(id, updateRequest)
                 .doOnSuccess(updatedBook -> {
                     try {
@@ -150,6 +157,7 @@ public class BookController {
                         log.info("Going to publish update event : {}", payload);
                         bookProducer.sendEvent(payload);
                     } catch (JsonProcessingException e) {
+                        log.info("Error occurred during json parsing: {}", e.getMessage());
                         throw new RuntimeException(e);
                     }
                 })
@@ -182,6 +190,7 @@ public class BookController {
                         log.info("Going to publish delete event : {}", payload);
                         bookProducer.sendEvent(payload);
                     } catch (JsonProcessingException e) {
+                        log.info("Error occurred during json parsing: {}", e.getMessage());
                         throw new RuntimeException(e);
                     }
                 })
@@ -205,6 +214,7 @@ public class BookController {
             @RequestParam(value = "author", required = false) String author) {
         log.info("Received request to search book");
         if (title == null && author == null) {
+            log.info("title and author are null");
             return Mono.just(ResponseEntity.badRequest().build());
         }
 
@@ -233,6 +243,7 @@ public class BookController {
     @GetMapping("/audit/{id}")
     @PreAuthorize(("hasRole('ADMIN')"))
     public Mono<ResponseEntity<List<AuditResponse>>> getAuditById(@PathVariable String id) {
+        log.info("Received request to get audit history of bookId: {}", id);
         return bookService.getAudits(id).collectList()
                 .map(audit -> ResponseEntity.ok().body(audit))
                 .onErrorResume(err -> {

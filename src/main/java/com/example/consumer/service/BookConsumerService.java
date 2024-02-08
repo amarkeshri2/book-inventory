@@ -21,9 +21,8 @@ public class BookConsumerService {
     private static final Logger log = LoggerFactory.getLogger(BookConsumerService.class);
     public void process(String book) throws JsonProcessingException {
         BookEventPayload eventPayload = objectMapper.readValue(book, BookEventPayload.class);
-        log.info("consumed book payload : {} ", eventPayload);
+        log.info("processing book payload : {} ", eventPayload);
         AuditDto auditDto = translator.translate(eventPayload, AuditDto.class);
-        log.info("audit dto : {} ", auditDto);
         auditDao.save(auditDto);
     }
 }

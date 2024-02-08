@@ -23,9 +23,10 @@ public class BookConsumer {
     public void consumeEvent(ConsumerRecord<String, String> record, Acknowledgment acknowledgment) {
         try {
             String book = record.value();
-            log.info("Consumed book event: {}", book);
             consumerService.process(book);
+            log.info("Consumed book event: {}", book);
             acknowledgment.acknowledge();
+
         } catch (Exception e) {
             log.error("Error processing book event", e);
         }
